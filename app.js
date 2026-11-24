@@ -85,7 +85,7 @@ const vacio = (a, b) => `<div class="empty"><h3>${a}</h3><p>${b}</p></div>`;
 
 function installBox() {
   if (window.matchMedia('(display-mode: standalone)').matches) return '';
-  if (S.installEvt) return `<div class="install"><img src="img/icono-192.png" alt=""><p><b>Instalá Barrio Oriental</b> en tu teléfono, con su ícono.</p><button class="btn" data-act="instalar">Instalar</button></div>`;
+  if (S.installEvt) return `<div class="install"><img src="icono-192.png" alt=""><p><b>Instalá Barrio Oriental</b> en tu teléfono, con su ícono.</p><button class="btn" data-act="instalar">Instalar</button></div>`;
   return '';
 }
 
@@ -97,7 +97,7 @@ function muro() {
   const mb = myP().barrio; if (mb && !cnt[mb]) cnt[mb] = 0;
   const top = Object.entries(cnt).sort((a, b) => (b[0] === mb) - (a[0] === mb) || b[1] - a[1]).slice(0, 10);
   let html = installBox() + `<div class="bar" role="group" aria-label="Secciones">${[['todo', 'Todo'], ...Object.entries(SECS)].map(([k, v]) => `<button class="pill" data-act="sec" data-v="${k}" aria-pressed="${S.sec === k}">${v}</button>`).join('')}</div>
-  <div class="vuelta" aria-label="Hoy en la vuelta"><button class="bub" data-act="zona" data-v="" aria-pressed="${!S.zona}"><i class="iso"><img src="img/isotipo.png" alt=""></i>Todo Uruguay<small>${semana.length} esta semana</small></button>
+  <div class="vuelta" aria-label="Hoy en la vuelta"><button class="bub" data-act="zona" data-v="" aria-pressed="${!S.zona}"><i class="iso"><img src="isotipo.png" alt=""></i>Todo Uruguay<small>${semana.length} esta semana</small></button>
   ${top.map(([b, n]) => `<button class="bub" data-act="zona" data-v="${esc(b)}" aria-pressed="${S.zona === b}"><i style="background:linear-gradient(140deg,hsl(${hue(b)} 70% 62%),hsl(${hue(b)} 60% 42%))">${esc(b.split(' ').map(w => w[0]).join('').slice(0, 2))}</i>${esc(b)}<small>${n ? n + (n === 1 ? ' nueva' : ' nuevas') : 'tu barrio'}</small></button>`).join('')}</div>
   <div class="zona"><span>Zona</span><select id="zonaSel" aria-label="Filtrar por barrio o departamento">${zonaOpts(S.zona, 'Todo Uruguay')}</select></div>
   ${S.sec === 'ronda' ? '<div class="note" style="background:var(--soft);color:var(--ink)"><b>La Ronda</b> es para charlar de todo, también de lo que nos divide. Una sola regla: se discuten ideas, no personas. Escuchá, preguntá y respetá aunque pienses distinto.</div>' : ''}`;
@@ -131,7 +131,7 @@ function vidriera() {
 }
 
 function idea() {
-  return `<article class="idea"><img class="iso" src="img/isotipo.png" alt="Isotipo de Barrio Oriental" width="560" height="358"><h2>¿Por qué Barrio Oriental?</h2>
+  return `<article class="idea"><img class="iso" src="isotipo.png" alt="Isotipo de Barrio Oriental" width="560" height="358"><h2>¿Por qué Barrio Oriental?</h2>
   <div class="compare"><div><b>3.452.460</b><span>personas en Chaoyang, un solo distrito de Pekín</span></div><div><b>3.499.451</b><span>personas en todo Uruguay</span></div></div>
   <p>En Pekín hay un solo distrito, Chaoyang, donde viven unos tres millones y medio de personas: casi la misma gente que en todo Uruguay. Y entran en un pedazo de tierra un poco más chico que el departamento de Montevideo. Allá, eso es una zona de la ciudad. Acá, es un país entero.</p>
   <p>Y hay otra coincidencia linda: ellos son orientales porque viven en el Oriente del mundo; nosotros, porque nacimos al oriente del río Uruguay. Orientales de los dos lados del planeta. La diferencia es que allá tres millones y medio son un distrito, y acá pueden volver a ser un barrio.</p>
