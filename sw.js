@@ -1,7 +1,7 @@
 // Service worker de Barrio Oriental.
 // Guarda la "cáscara" de la app para que abra rápido, pero siempre intenta
 // buscar primero la versión nueva: así los cambios llegan solos a todos.
-const CACHE = 'bo-v4';
+const CACHE = 'bo-v5';
 const SHELL = ['./', 'index.html', 'styles.css', 'app.js', 'config.js', 'manifest.webmanifest',
   'logotipo.png', 'isotipo.png', 'icono-192.png', 'icono-512.png'];
 

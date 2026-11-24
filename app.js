@@ -278,8 +278,28 @@ async function subirGaleria(input) {
 const borrarFoto = p => { if (p) S.sb.storage.from('fotos').remove([p]).catch(() => {}); };
 
 // ---------- Hojas (formularios) ----------
-function abrir(html) { $('#sheet').innerHTML = html; $('#ov').classList.add('show'); const i = $('#sheet').querySelector('textarea,input,select'); if (i) i.focus(); }
-function cerrar() { $('#ov').classList.remove('show'); $('#sheet').innerHTML = ''; }
+// ---------- Botón "atrás" de Android ----------
+let hojaEnHist = false;
+function irA(v) {
+  if (v === S.view) { scrollTo(0, 0); return; }
+  S.view = v; history.pushState({ v }, ''); render(); scrollTo(0, 0);
+}
+function ocultarHoja() { $('#ov').classList.remove('show'); $('#sheet').innerHTML = ''; }
+window.addEventListener('popstate', e => {
+  if ($('#ov').classList.contains('show')) { hojaEnHist = false; ocultarHoja(); return; }
+  const v = (e.state && e.state.v) || 'muro';
+  if (v !== S.view) { S.view = v; render(); scrollTo(0, 0); }
+});
+history.replaceState({ v: 'muro' }, '');
+function abrir(html) {
+  if (!hojaEnHist) { history.pushState({ v: S.view, hoja: 1 }, ''); hojaEnHist = true; }
+  $('#sheet').innerHTML = html; $('#ov').classList.add('show'); const i = $('#sheet').querySelector('textarea,input,select'); if (i) i.focus(); }
+function cerrar() {
+  ocultarHoja();
+  if (!hojaEnHist) return Promise.resolve();
+  hojaEnHist = false;
+  return new Promise(r => { let hecho = false; const f = () => { if (hecho) return; hecho = true; window.removeEventListener('popstate', f); r(); }; window.addEventListener('popstate', f); history.back(); setTimeout(f, 500); });
+}
 const fotoBtns = n => `<div class="fotobtns" data-grupo="${n}">
   <label class="filebtn"><input type="file" name="${n}" accept="image/*" capture="environment"><svg width="22" height="22"><use href="#i-cam"/></svg>Sacar foto</label>
   <label class="filebtn"><input type="file" name="${n}" accept="image/*"><svg width="22" height="22"><use href="#i-gal"/></svg>Elegir del celular</label>
@@ -318,8 +338,8 @@ function formShop(c) {
 const confirmar = (b, txt) => { if (b.dataset.ok) return true; b.dataset.ok = '1'; b.textContent = txt || '¿Seguro? Tocá de nuevo'; return false; };
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return; const a = b.dataset.act, v = b.dataset.v, sb = S.sb;
-  if (a === 'tab') { S.tab = v; S.view = 'muro'; render(); scrollTo(0, 0); return; }
-  if (a === 'view') { S.view = v; render(); scrollTo(0, 0); return; }
+  if (a === 'tab') { S.tab = v; if (S.view !== 'muro') irA('muro'); else { render(); scrollTo(0, 0); } return; }
+  if (a === 'view') { irA(v); return; }
   if (a === 'sec') { S.sec = v; render(); return; }
   if (a === 'zona') { S.zona = v; render(); return; }
   if (a === 'coms') { S.open.has(v) ? S.open.delete(v) : S.open.add(v); render(); return; }
@@ -407,7 +427,7 @@ document.addEventListener('submit', async e => {
     if (k === 'post') {
       const foto = await subirFoto(f.querySelector('[name=foto]'));
       await q(sb.from('posts').insert({ autor: S.me, seccion: txt('sec'), barrio: txt('barrio'), texto: txt('texto'), whatsapp: txt('wa'), foto }));
-      cerrar(); Object.assign(S, { view: 'muro', tab: 'paravos', sec: 'todo', zona: '' }); msg(''); scrollTo(0, 0); await cargar();
+      await cerrar(); Object.assign(S, { tab: 'paravos', sec: 'todo', zona: '' }); if (S.view !== 'muro') irA('muro'); msg(''); scrollTo(0, 0); await cargar();
     }
     if (k === 'shop') {
       const id = f.dataset.v, old = S.shops.find(c => c.id === id) || {};
