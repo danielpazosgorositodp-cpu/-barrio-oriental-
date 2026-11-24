@@ -54,7 +54,7 @@ const nombre = uid => uid === S.me ? 'Vos' : ((S.perf[uid] && S.perf[uid].nombre
 const autorDe = p => p.ejemplo ? (p.autor_ejemplo || 'Vecino de ejemplo') : (p.autor === S.me ? ((myP().nombre || 'Vos')) : nombre(p.autor));
 
 function msg(txt, ok) { $('#msg').innerHTML = txt ? `<div class="note"${ok ? ' style="background:var(--soft);color:var(--ink)"' : ''}>${txt}</div>` : ''; }
-function fail(e) { console.error(e); msg('No se pudo guardar. Revisá la conexión y probá de nuevo.'); }
+function fail(e) { console.error(e); const det = e && (e.message || e.code) ? `<br><small>Detalle para Claude: ${esc(String(e.code || '') + ' ' + String(e.message || '')).slice(0, 200)}</small>` : ''; msg('No se pudo guardar. Revisá la conexión y probá de nuevo.' + det); }
 async function q(p) { const r = await p; if (r.error) throw r.error; return r.data; }
 
 // ---------- Para vos (sin burbujas) y Amigos (cronológico) ----------
@@ -459,7 +459,13 @@ document.addEventListener('submit', async e => {
     if (k === 'post') {
       const foto = await subirFoto(f.querySelector('[name=foto]'));
       const vid = primerUrl(txt('video'));
-      await q(sb.from('posts').insert({ autor: S.me, seccion: txt('sec'), barrio: txt('barrio'), texto: txt('texto'), whatsapp: txt('wa'), foto, ...(vid ? { video: vid } : {}) }));
+      const base = { autor: S.me, seccion: txt('sec'), barrio: txt('barrio'), texto: txt('texto'), whatsapp: txt('wa'), foto };
+      try { await q(sb.from('posts').insert({ ...base, ...(vid ? { video: vid } : {}) })); }
+      catch (err) {
+        // Si la base todavía no tiene la columna de video, se publica igual con el enlace en el texto.
+        if (!vid || !/video/.test(String(err && err.message))) throw err;
+        await q(sb.from('posts').insert({ ...base, texto: (base.texto + '\n' + vid).slice(0, 500) }));
+      }
       await cerrar(); Object.assign(S, { tab: 'paravos', sec: 'todo', zona: '' }); if (S.view !== 'muro') irA('muro'); msg(''); scrollTo(0, 0); await cargar();
     }
     if (k === 'shop') {
