@@ -1,7 +1,15 @@
 // Barrio Oriental · lógica de la app
 'use strict';
 (function () {
-const SECS = { barrios: 'Barrios', ronda: 'La Ronda', comercios: 'Comercios', feria: 'La Feria', folklore: 'Folklore Oriental' };
+const SECS = { barrios: 'Barrios', ronda: 'La Ronda', comercios: 'Comercios', feria: 'La Feria', folklore: 'Cultura' };
+const DESC = {
+  todo: 'Todo lo que pasa en Uruguay, mezclado y sin burbujas.',
+  barrios: 'La vida del barrio: avisos, recomendaciones, mascotas perdidas, fotos de la plaza y lo que pasa en la cuadra.',
+  ronda: 'Nuestro espacio de diálogo: charlá de cualquier tema, también de lo que nos divide. Una sola regla: se discuten ideas, no personas.',
+  comercios: 'Los comercios y oficios de los vecinos: novedades, ofertas y recomendaciones. Trato directo, sin comisiones.',
+  feria: 'Compra, venta y permuta entre vecinos, y lo que llegó a la feria del barrio.',
+  folklore: 'Música, teatro, arte, carnaval, danza y nuestras tradiciones. Promocioná tu toque, tu obra o tu taller.'
+};
 const MVD = ['Aguada','Aires Puros','Atahualpa','Bañados de Carrasco','Barrio Sur','Bella Vista','Belvedere','Brazo Oriental','Buceo','Capurro','Carrasco','Carrasco Norte','Casabó','Casavalle','Centro','Cerrito','Cerro','Ciudad Vieja','Colón','Conciliación','Cordón','Flor de Maroñas','Goes','Ituzaingó','Jacinto Vera','Jardines del Hipódromo','La Blanqueada','La Comercial','La Figurita','La Paloma','La Teja','Larrañaga','Las Acacias','Las Canteras','Lezica','Malvín','Malvín Norte','Manga','Maroñas','Mercado Modelo','Nuevo París','Palermo','Parque Batlle','Parque Rodó','Paso de la Arena','Paso Molino','Peñarol','Piedras Blancas','Pocitos','Prado','Punta Carretas','Punta de Rieles','Punta Gorda','Reducto','Sayago','Tres Cruces','Tres Ombúes','Unión','Villa Española','Villa Muñoz'];
 const DEP = ['Artigas','Canelones','Cerro Largo','Colonia','Durazno','Flores','Florida','Lavalleja','Maldonado','Paysandú','Río Negro','Rivera','Rocha','Salto','San José','Soriano','Tacuarembó','Treinta y Tres'];
 const MATES = ['Amargo','Dulce','Con yuyos','Team torta frita','Termo bajo el brazo'];
@@ -108,7 +116,7 @@ function muro() {
   <div class="vuelta" aria-label="Hoy en la vuelta"><button class="bub" data-act="zona" data-v="" aria-pressed="${!S.zona}"><i class="iso"><img src="isotipo.png" alt=""></i>Todo Uruguay<small>${semana.length} esta semana</small></button>
   ${top.map(([b, n]) => `<button class="bub" data-act="zona" data-v="${esc(b)}" aria-pressed="${S.zona === b}"><i style="background:linear-gradient(140deg,hsl(${hue(b)} 70% 62%),hsl(${hue(b)} 60% 42%))">${esc(b.split(' ').map(w => w[0]).join('').slice(0, 2))}</i>${esc(b)}<small>${n ? n + (n === 1 ? ' nueva' : ' nuevas') : 'tu barrio'}</small></button>`).join('')}</div>
   <div class="zona"><span>Zona</span><select id="zonaSel" aria-label="Filtrar por barrio o departamento">${zonaOpts(S.zona, 'Todo Uruguay')}</select></div>
-  ${S.sec === 'ronda' ? '<div class="note" style="background:var(--soft);color:var(--ink)"><b>La Ronda</b> es para charlar de todo, también de lo que nos divide. Una sola regla: se discuten ideas, no personas. Escuchá, preguntá y respetá aunque pienses distinto.</div>' : ''}`;
+  <p class="secdesc"><b>${S.sec === 'todo' ? 'Todo' : esc(SECS[S.sec])}:</b> ${esc(DESC[S.sec])}</p>`;
   if (S.tab === 'paravos') {
     html += `<details class="regla"><summary>¿Cómo se arma Para vos?</summary>Sin burbujas, y a la vista de todos: intercalamos lo más cebado de los últimos 3 días, lo nuevo de vecinos y comercios con pocos seguidores (para que nadie quede invisible) y lo que pasa en otros barrios y departamentos. Nadie paga por aparecer.</details>`;
     html += `<div class="feed">${paraVos(list).map(p => postCard(p)).join('') || vacio('Todavía no hay nada por acá', 'Sé el primero en publicar algo de tu barrio.')}</div>`;
@@ -307,7 +315,7 @@ const fotoBtns = n => `<div class="fotobtns" data-grupo="${n}">
 function formPost() {
   const b = myP().barrio || '';
   abrir(`<h2>Publicar en el barrio</h2><form data-form="post">
-  <label>Sección</label><div class="chips">${Object.entries(SECS).map(([k, v], i) => `<label style="margin:0;font-weight:600"><input type="radio" name="sec" value="${k}" ${i === 0 ? 'checked' : ''} style="width:auto;min-height:0"> ${v}</label>`).join('')}</div>
+  <label>¿En qué sección?</label><div class="secopts">${Object.entries(SECS).map(([k, v], i) => `<label class="secopt"><input type="radio" name="sec" value="${k}" ${(S.sec === k || (S.sec === 'todo' && i === 0)) ? 'checked' : ''}><span><b>${v}</b><small>${esc(DESC[k])}</small></span></label>`).join('')}</div>
   <label for="fz">Zona</label><select id="fz" name="barrio" required>${zonaOpts(b, b ? undefined : 'Elegí tu barrio o departamento')}</select>
   <label for="ft">¿Qué querés contar?</label><textarea id="ft" name="texto" rows="4" maxlength="500" required placeholder="Una recomendación, algo que vendés, una foto de la plaza, una receta…"></textarea><div class="hint">Hasta 500 caracteres.</div>
   <label>Foto (opcional)</label>${fotoBtns('foto')}<div class="hint">La achicamos antes de subirla.</div>

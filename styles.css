@@ -155,3 +155,11 @@ body.sin-sesion nav.bottom,body.sin-sesion #seg,body.sin-sesion #frase{display:n
 .prevbox{margin-top:8px;display:flex;gap:10px;align-items:center}
 .prevbox[hidden]{display:none}
 .prev{width:96px;height:96px;object-fit:cover;border-radius:12px;background:var(--soft)}
+.secdesc{margin:8px 14px 0;font-size:14.5px;line-height:1.4;color:var(--mut)}
+.secdesc b{color:var(--ink)}
+.secopts{display:grid;gap:6px}
+.sheet label.secopt{display:flex;gap:10px;align-items:flex-start;margin:0;font-weight:400;border:2px solid var(--line);background:var(--card);border-radius:12px;padding:9px 12px;cursor:pointer}
+.secopt input{width:20px;height:20px;min-height:0;margin:3px 0 0;flex:none;accent-color:var(--cel)}
+.secopt b{display:block}
+.secopt small{display:block;color:var(--mut);font-size:13px;line-height:1.35}
+.secopt:has(input:checked){border-color:var(--cel);background:var(--soft)}
