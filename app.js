@@ -263,7 +263,9 @@ async function comprimir(file) {
   return await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
 }
 async function subirFoto(input) {
-  const f = input && input.files && input.files[0]; if (!f) return '';
+  const grupo = input && input.closest('.fotobtns');
+  const elegido = grupo ? [...grupo.querySelectorAll('input[type=file]')].find(i => i.files && i.files[0]) : input;
+  const f = elegido && elegido.files && elegido.files[0]; if (!f) return '';
   const blob = await comprimir(f); const path = `${S.me}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
   await q(S.sb.storage.from('fotos').upload(path, blob, { contentType: 'image/jpeg' }));
   return path;
@@ -278,13 +280,17 @@ const borrarFoto = p => { if (p) S.sb.storage.from('fotos').remove([p]).catch(()
 // ---------- Hojas (formularios) ----------
 function abrir(html) { $('#sheet').innerHTML = html; $('#ov').classList.add('show'); const i = $('#sheet').querySelector('textarea,input,select'); if (i) i.focus(); }
 function cerrar() { $('#ov').classList.remove('show'); $('#sheet').innerHTML = ''; }
+const fotoBtns = n => `<div class="fotobtns" data-grupo="${n}">
+  <label class="filebtn"><input type="file" name="${n}" accept="image/*" capture="environment"><svg width="22" height="22"><use href="#i-cam"/></svg>Sacar foto</label>
+  <label class="filebtn"><input type="file" name="${n}" accept="image/*"><svg width="22" height="22"><use href="#i-gal"/></svg>Elegir del celular</label>
+  </div><div class="prevbox" hidden><img class="prev" alt="Vista previa de la foto"><button type="button" class="del" data-act="quitarFoto">Quitar foto</button></div>`;
 function formPost() {
   const b = myP().barrio || '';
   abrir(`<h2>Publicar en el barrio</h2><form data-form="post">
   <label>Sección</label><div class="chips">${Object.entries(SECS).map(([k, v], i) => `<label style="margin:0;font-weight:600"><input type="radio" name="sec" value="${k}" ${i === 0 ? 'checked' : ''} style="width:auto;min-height:0"> ${v}</label>`).join('')}</div>
   <label for="fz">Zona</label><select id="fz" name="barrio" required>${zonaOpts(b, b ? undefined : 'Elegí tu barrio o departamento')}</select>
   <label for="ft">¿Qué querés contar?</label><textarea id="ft" name="texto" rows="4" maxlength="500" required placeholder="Una recomendación, algo que vendés, una foto de la plaza, una receta…"></textarea><div class="hint">Hasta 500 caracteres.</div>
-  <label for="ff">Foto (opcional)</label><input id="ff" type="file" name="foto" accept="image/*"><div class="hint">La achicamos antes de subirla.</div>
+  <label>Foto (opcional)</label>${fotoBtns('foto')}<div class="hint">La achicamos antes de subirla.</div>
   <label for="fw">WhatsApp para contacto (opcional)</label><input id="fw" name="wa" inputmode="tel" placeholder="099 123 456"><div class="hint">Se muestra en La Feria y Comercios, para que te escriban directo.</div>
   <div class="row" style="margin-top:16px"><button class="btn" type="submit">Publicar</button><button class="btn alt" type="button" data-act="cerrar">Cancelar</button></div></form>`);
 }
@@ -299,7 +305,7 @@ function formShop(c) {
   <label for="sh">Horario</label><input id="sh" name="horario" maxlength="80" value="${esc(c.horario)}">
   <label for="se">Entrega</label><select id="se" name="entrega">${['', 'Retiro en el local', 'Cadete propio', 'Coordinar por WhatsApp'].map(o => `<option${o === (c.entrega || '') ? ' selected' : ''}>${o}</option>`).join('')}</select>
   <label for="sw">WhatsApp</label><input id="sw" name="wa" inputmode="tel" maxlength="30" value="${esc(c.whatsapp)}">
-  <label for="sp">Foto principal (el frente o quien atiende)</label><input id="sp" type="file" name="foto" accept="image/*">
+  <label>Foto principal (el frente o quien atiende)</label>${fotoBtns('foto')}
   <label for="sg">Galería: hasta 4 fotos más</label><input id="sg" type="file" name="galeria" accept="image/*" multiple>
   <div class="hint">${(c.fotos || []).length ? 'Ya tiene ' + c.fotos.length + ' foto(s). Si elegís nuevas, reemplazan a las anteriores.' : 'Mostrá los productos, el local, la gente.'}</div>
   <label for="sv">Video (opcional)</label><input id="sv" name="video" type="url" inputmode="url" maxlength="300" placeholder="Enlace de YouTube, Instagram o TikTok" value="${esc(c.video)}">
@@ -318,6 +324,7 @@ document.addEventListener('click', async e => {
   if (a === 'zona') { S.zona = v; render(); return; }
   if (a === 'coms') { S.open.has(v) ? S.open.delete(v) : S.open.add(v); render(); return; }
   if (a === 'cerrar') { cerrar(); return; }
+  if (a === 'quitarFoto') { const box = b.closest('.prevbox'), grupo = box.previousElementSibling; grupo.querySelectorAll('input[type=file]').forEach(i => { i.value = ''; }); box.hidden = true; return; }
   if (a === 'authTab') { S.authTab = v; render(); return; }
   if (a === 'instalar' && S.installEvt) { S.installEvt.prompt(); try { await S.installEvt.userChoice; } catch (err) {} S.installEvt = null; render(); return; }
   if (a === 'olvide') {
@@ -366,7 +373,16 @@ document.addEventListener('click', async e => {
 });
 $('#ov').addEventListener('click', e => { if (e.target.id === 'ov') cerrar(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrar(); });
-document.addEventListener('change', e => { if (e.target.id === 'zonaSel') { S.zona = e.target.value; render(); } });
+document.addEventListener('change', e => {
+  if (e.target.id === 'zonaSel') { S.zona = e.target.value; render(); return; }
+  const grupo = e.target.closest && e.target.closest('.fotobtns');
+  if (grupo && e.target.files && e.target.files[0]) {
+    grupo.querySelectorAll('input[type=file]').forEach(i => { if (i !== e.target) i.value = ''; });
+    const box = grupo.nextElementSibling, img = box.querySelector('img');
+    if (img.src) URL.revokeObjectURL(img.src);
+    img.src = URL.createObjectURL(e.target.files[0]); box.hidden = false;
+  }
+});
 
 document.addEventListener('submit', async e => {
   const f = e.target.closest('form[data-form]'); if (!f) return; e.preventDefault();

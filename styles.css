@@ -148,3 +148,10 @@ body.sin-sesion nav.bottom,body.sin-sesion #seg,body.sin-sesion #frase{display:n
 .vec{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .vec li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .vec li span{color:var(--mut);font-size:14px;text-align:right}
+.fotobtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sheet label.filebtn{display:flex;align-items:center;justify-content:center;gap:8px;margin:0;min-height:52px;border:2px solid var(--line);background:var(--card);border-radius:12px;font-weight:800;color:var(--celd);cursor:pointer;text-align:center;padding:8px}
+.filebtn input{position:absolute;width:1px;height:1px;opacity:0}
+.filebtn:focus-within{outline:3px solid var(--sol);outline-offset:2px}
+.prevbox{margin-top:8px;display:flex;gap:10px;align-items:center}
+.prevbox[hidden]{display:none}
+.prev{width:96px;height:96px;object-fit:cover;border-radius:12px;background:var(--soft)}
