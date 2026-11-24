@@ -31,10 +31,16 @@ const mapLink = (ref, b) => 'https://www.google.com/maps/search/?api=1&query=' +
 const fotoUrl = p => p ? S.sb.storage.from('fotos').getPublicUrl(p).data.publicUrl : '';
 const okUrl = u => /^https:\/\//.test(u);
 const ytId = u => { const m = String(u || '').match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; };
+const primerUrl = t => { const m = String(t || '').match(/https:\/\/[^\s"'<>]+/); return m ? m[0] : ''; };
 function videoHtml(u) {
   if (!okUrl(u)) return '';
-  const id = ytId(u);
-  if (id) return `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}" title="Video del comercio" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
+  const yt = ytId(u);
+  if (yt) return `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${yt}" title="Video" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
+  const ig = u.match(/instagram\.com\/(?:[A-Za-z0-9_.]+\/)?(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/);
+  if (ig) return `<div class="video vert ig"><iframe src="https://www.instagram.com/${ig[1] === 'p' ? 'p' : 'reel'}/${ig[2]}/embed" title="Video de Instagram" loading="lazy" allowfullscreen></iframe></div>`;
+  const tt = u.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);
+  if (tt) return `<div class="video vert tt"><iframe src="https://www.tiktok.com/embed/v2/${tt[1]}" title="Video de TikTok" loading="lazy" allow="encrypted-media; fullscreen" allowfullscreen></iframe></div>`;
+  if (/(facebook\.com\/.+\/videos\/|facebook\.com\/(watch|reel)|fb\.watch\/)/.test(u)) return `<div class="video"><iframe src="https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(u)}&show_text=false" title="Video de Facebook" loading="lazy" allow="encrypted-media; fullscreen" allowfullscreen></iframe></div>`;
   const red = /instagram\.com/.test(u) ? 'Instagram' : /tiktok\.com/.test(u) ? 'TikTok' : /facebook\.com|fb\.watch/.test(u) ? 'Facebook' : 'la web';
   return `<a class="lnk vid" href="${esc(u)}" target="_blank" rel="noopener">▶ Ver el video en ${red}</a>`;
 }
@@ -86,6 +92,7 @@ function postCard(p, por) {
   <div style="margin-top:8px"><span class="tag">${esc(SECS[p.seccion] || 'Barrios')}</span>${p.ejemplo ? ' <span class="tag ej">ejemplo</span>' : ''}${S.admin && rm[p.id] ? ` <span class="rep">⚑ ${rm[p.id]} reporte${rm[p.id] > 1 ? 's' : ''}</span>` : ''}</div>
   <p class="txt">${esc(p.texto)}</p>
   ${okUrl(foto) ? `<img class="foto" loading="lazy" alt="Foto de la publicación" src="${esc(foto)}">` : ''}
+  ${videoHtml(p.video)}
   ${wa ? `<div style="margin-top:10px"><a class="wa" href="${esc(wa)}" target="_blank" rel="noopener"><svg width="20" height="20"><use href="#i-tel"/></svg>Hablar por WhatsApp</a><div class="num">${esc(p.whatsapp)}</div></div>` : ''}
   <div class="acts">
    <button class="act ${mine(S.ceb, p.id) ? 'on' : ''}" data-act="cebar" data-v="${esc(p.id)}" title="Cebar un mate es como dar me gusta"><svg><use href="#i-mate"/></svg><span class="lbl">${cm[p.id] || 0} ${mine(S.ceb, p.id) ? 'Cebado' : 'Cebar'}<small>(me gusta)</small></span></button>
@@ -312,13 +319,16 @@ const fotoBtns = n => `<div class="fotobtns" data-grupo="${n}">
   <label class="filebtn"><input type="file" name="${n}" accept="image/*" capture="environment"><svg width="22" height="22"><use href="#i-cam"/></svg>Sacar foto</label>
   <label class="filebtn"><input type="file" name="${n}" accept="image/*"><svg width="22" height="22"><use href="#i-gal"/></svg>Elegir del celular</label>
   </div><div class="prevbox" hidden><img class="prev" alt="Vista previa de la foto"><button type="button" class="del" data-act="quitarFoto">Quitar foto</button></div>`;
-function formPost() {
+function formPost(pre) {
+  pre = pre || {};
   const b = myP().barrio || '';
   abrir(`<h2>Publicar en el barrio</h2><form data-form="post">
   <label>¿En qué sección?</label><div class="secopts">${Object.entries(SECS).map(([k, v], i) => `<label class="secopt"><input type="radio" name="sec" value="${k}" ${(S.sec === k || (S.sec === 'todo' && i === 0)) ? 'checked' : ''}><span><b>${v}</b><small>${esc(DESC[k])}</small></span></label>`).join('')}</div>
   <label for="fz">Zona</label><select id="fz" name="barrio" required>${zonaOpts(b, b ? undefined : 'Elegí tu barrio o departamento')}</select>
-  <label for="ft">¿Qué querés contar?</label><textarea id="ft" name="texto" rows="4" maxlength="500" required placeholder="Una recomendación, algo que vendés, una foto de la plaza, una receta…"></textarea><div class="hint">Hasta 500 caracteres.</div>
+  <label for="ft">¿Qué querés contar?</label><textarea id="ft" name="texto" rows="4" maxlength="500" required placeholder="Una recomendación, algo que vendés, una foto de la plaza, una receta…">${esc(pre.texto || '')}</textarea><div class="hint">Hasta 500 caracteres.</div>
   <label>Foto (opcional)</label>${fotoBtns('foto')}<div class="hint">La achicamos antes de subirla.</div>
+  <label for="fv">Video (opcional)</label><div class="row"><input id="fv" name="video" type="url" inputmode="url" maxlength="300" placeholder="Enlace de Instagram, TikTok, YouTube o Facebook" value="${esc(pre.video || '')}"><button type="button" class="btn alt" data-act="pegarVideo">Pegar</button></div>
+  <div class="hint">Más fácil: en Instagram, TikTok, YouTube o Facebook tocá <b>Compartir → Barrio Oriental</b> y el video llega solo acá.</div>
   <label for="fw">WhatsApp para contacto (opcional)</label><input id="fw" name="wa" inputmode="tel" placeholder="099 123 456"><div class="hint">Se muestra en La Feria y Comercios, para que te escriban directo.</div>
   <div class="row" style="margin-top:16px"><button class="btn" type="submit">Publicar</button><button class="btn alt" type="button" data-act="cerrar">Cancelar</button></div></form>`);
 }
@@ -352,6 +362,7 @@ document.addEventListener('click', async e => {
   if (a === 'zona') { S.zona = v; render(); return; }
   if (a === 'coms') { S.open.has(v) ? S.open.delete(v) : S.open.add(v); render(); return; }
   if (a === 'cerrar') { cerrar(); return; }
+  if (a === 'pegarVideo') { try { const tx = await navigator.clipboard.readText(); const u = primerUrl(tx); const i = $('#fv'); if (i) i.value = u || tx.trim(); } catch (err) { msg('No pude leer lo copiado: mantené apretado el casillero y elegí “Pegar”.', true); } return; }
   if (a === 'quitarFoto') { const box = b.closest('.prevbox'), grupo = box.previousElementSibling; grupo.querySelectorAll('input[type=file]').forEach(i => { i.value = ''; }); box.hidden = true; return; }
   if (a === 'authTab') { S.authTab = v; render(); return; }
   if (a === 'instalar' && S.installEvt) { S.installEvt.prompt(); try { await S.installEvt.userChoice; } catch (err) {} S.installEvt = null; render(); return; }
@@ -447,7 +458,8 @@ document.addEventListener('submit', async e => {
     if (k === 'perfil') { await q(sb.from('perfiles').update({ nombre: txt('nombre') || 'Vecino', barrio: txt('barrio'), mate: txt('mate') }).eq('id', S.me)); msg('Perfil guardado.', true); await cargar(); }
     if (k === 'post') {
       const foto = await subirFoto(f.querySelector('[name=foto]'));
-      await q(sb.from('posts').insert({ autor: S.me, seccion: txt('sec'), barrio: txt('barrio'), texto: txt('texto'), whatsapp: txt('wa'), foto }));
+      const vid = primerUrl(txt('video'));
+      await q(sb.from('posts').insert({ autor: S.me, seccion: txt('sec'), barrio: txt('barrio'), texto: txt('texto'), whatsapp: txt('wa'), foto, ...(vid ? { video: vid } : {}) }));
       await cerrar(); Object.assign(S, { tab: 'paravos', sec: 'todo', zona: '' }); if (S.view !== 'muro') irA('muro'); msg(''); scrollTo(0, 0); await cargar();
     }
     if (k === 'shop') {
@@ -472,6 +484,23 @@ window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); S.inst
 window.addEventListener('appinstalled', () => { S.installEvt = null; render(); });
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 
+// ---------- Compartir desde otras apps (Instagram, TikTok, YouTube, Facebook) ----------
+(() => {
+  const ps = new URLSearchParams(location.search);
+  if (!['url', 'text', 'title'].some(k => ps.get(k))) return;
+  const todo = [ps.get('url'), ps.get('text'), ps.get('title')].filter(Boolean).join(' ');
+  const video = primerUrl(ps.get('url')) || primerUrl(todo);
+  const titulo = String(ps.get('title') || '').trim();
+  let texto = String(ps.get('text') || '').replace(video, '').trim();
+  if (!texto && titulo && !/^https:/.test(titulo)) texto = titulo;
+  S.compartido = { video, texto: texto.slice(0, 500) };
+  history.replaceState({ v: 'muro' }, '', location.pathname);
+})();
+function abrirCompartido() {
+  if (!S.compartido || !S.me) return;
+  const pre = S.compartido; S.compartido = null; formPost(pre);
+}
+
 // ---------- Arranque ----------
 const cfg = window.BO_CONFIG || {};
 if (!window.supabase || !cfg.SUPABASE_URL || /TU-PROYECTO/.test(cfg.SUPABASE_URL)) {
@@ -489,6 +518,7 @@ async function conSesion(session) {
   if (!S.me) { Object.assign(S, { posts: [], coms: [], ceb: [], pas: [], seg: [], reps: [], recl: [], perf: {}, shops: [], admin: false, view: S.view === 'idea' ? 'idea' : 'muro' }); render(); return; }
   if (S.view !== 'idea') S.view = 'muro';
   render(); await cargar();
+  abrirCompartido();
   canal = S.sb.channel('barrio').on('postgres_changes', { event: '*', schema: 'public' }, recargar).subscribe();
 }
 S.sb.auth.onAuthStateChange((ev, session) => {
