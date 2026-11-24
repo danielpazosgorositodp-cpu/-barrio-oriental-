@@ -6,7 +6,7 @@ const MVD = ['Aguada','Aires Puros','Atahualpa','Bañados de Carrasco','Barrio S
 const DEP = ['Artigas','Canelones','Cerro Largo','Colonia','Durazno','Flores','Florida','Lavalleja','Maldonado','Paysandú','Río Negro','Rivera','Rocha','Salto','San José','Soriano','Tacuarembó','Treinta y Tres'];
 const MATES = ['Amargo','Dulce','Con yuyos','Team torta frita','Termo bajo el brazo'];
 
-const S = { sb: null, me: null, admin: false, posts: [], coms: [], ceb: [], pas: [], seg: [], reps: [], perf: {}, shops: [],
+const S = { sb: null, me: null, admin: false, posts: [], coms: [], ceb: [], pas: [], seg: [], reps: [], recl: [], perf: {}, shops: [],
   tab: 'paravos', sec: 'todo', zona: '', view: 'muro', open: new Set(), authTab: 'entrar', installEvt: null, recovery: false };
 
 const $ = s => document.querySelector(s);
@@ -22,6 +22,14 @@ const waLink = (n, txt) => { let d = String(n || '').replace(/\D/g, ''); if (!d)
 const mapLink = (ref, b) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent([ref, b, MVD.includes(b) ? 'Montevideo' : '', 'Uruguay'].filter(Boolean).join(', '));
 const fotoUrl = p => p ? S.sb.storage.from('fotos').getPublicUrl(p).data.publicUrl : '';
 const okUrl = u => /^https:\/\//.test(u);
+const ytId = u => { const m = String(u || '').match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; };
+function videoHtml(u) {
+  if (!okUrl(u)) return '';
+  const id = ytId(u);
+  if (id) return `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}" title="Video del comercio" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`;
+  const red = /instagram\.com/.test(u) ? 'Instagram' : /tiktok\.com/.test(u) ? 'TikTok' : /facebook\.com|fb\.watch/.test(u) ? 'Facebook' : 'la web';
+  return `<a class="lnk vid" href="${esc(u)}" target="_blank" rel="noopener">▶ Ver el video en ${red}</a>`;
+}
 
 const myP = () => S.perf[S.me] || {};
 const sigo = uid => S.seg.some(x => x.seguidor === S.me && x.seguido === uid);
@@ -112,15 +120,21 @@ function muro() {
 
 function shopCard(c) {
   const wa = waLink(c.whatsapp, '¡Hola! Te vi en Barrio Oriental 🧉'), foto = fotoUrl(c.foto);
+  const gal = (c.fotos || []).map(fotoUrl).filter(okUrl);
+  const pedi = S.recl.some(r => r.comercio_id === c.id && r.autor === S.me);
   return `<article class="card shop"><div class="head">${okUrl(foto) ? `<img class="pic" alt="Frente del local" src="${esc(foto)}">` : `<div class="pic">${esc(ini(c.nombre))}</div>`}
   <div><h3>${esc(c.nombre)}</h3><div style="margin-top:4px"><span class="tag">${esc(c.rubro || 'Comercio')}</span> ${c.verificado ? '<span class="ver">✓ Conocido por la comunidad</span>' : ''}</div>
   <div class="num">${esc([c.referencia, c.barrio].filter(Boolean).join(' · '))}</div></div></div>
+  ${videoHtml(c.video)}
+  ${gal.length ? `<div class="gal" aria-label="Fotos del comercio">${gal.map(u => `<img loading="lazy" alt="Foto del comercio" src="${esc(u)}">`).join('')}</div>` : ''}
   <dl>${c.atiende ? `<dt>Atiende</dt><dd>${esc(c.atiende)}</dd>` : ''}${c.horario ? `<dt>Horario</dt><dd>${esc(c.horario)}</dd>` : ''}${c.entrega ? `<dt>Entrega</dt><dd>${esc(c.entrega)}</dd>` : ''}${c.whatsapp ? `<dt>WhatsApp</dt><dd>${esc(c.whatsapp)}</dd>` : ''}</dl>
+  ${c.credito ? `<p class="credito">Presentación: <b>${esc(c.credito)}</b></p>` : ''}
   ${c.pendiente ? '<p class="num">Ficha de arranque: faltan los datos que complete el propio comercio.</p>' : ''}
   <div class="acts">${wa ? `<a class="wa" href="${esc(wa)}" target="_blank" rel="noopener"><svg width="20" height="20"><use href="#i-tel"/></svg>WhatsApp</a>` : ''}
   <a class="lnk" href="${esc(mapLink(c.referencia, c.barrio))}" target="_blank" rel="noopener"><svg width="20" height="20"><use href="#i-pin"/></svg>Cómo llegar</a>
   ${S.admin ? `<button class="act" data-act="verif" data-v="${esc(c.id)}">${c.verificado ? 'Quitar ✓' : 'Marcar conocido'}</button>` : ''}
-  ${(S.admin || c.autor === S.me) ? `<button class="act" data-act="editShop" data-v="${esc(c.id)}">Editar</button><button class="del" data-act="borrarShop" data-v="${esc(c.id)}">Borrar</button>` : ''}</div></article>`;
+  ${(S.admin || c.autor === S.me) ? `<button class="act" data-act="editShop" data-v="${esc(c.id)}">Editar</button><button class="del" data-act="borrarShop" data-v="${esc(c.id)}">Borrar</button>` : ''}</div>
+  ${!c.autor && !S.admin ? (pedi ? '<p class="num">Pediste ser el dueño de esta ficha. Te avisamos cuando el administrador lo apruebe.</p>' : `<button class="linkbtn" data-act="reclamar" data-v="${esc(c.id)}">¿Es tu comercio? Tocá acá para administrar esta ficha</button>`) : ''}</article>`;
 }
 function vidriera() {
   const list = S.shops.filter(c => !S.zona || c.barrio === S.zona).sort((a, b) => (b.verificado ? 1 : 0) - (a.verificado ? 1 : 0) || String(a.nombre).localeCompare(String(b.nombre)));
@@ -145,6 +159,24 @@ function idea() {
   ${S.me ? '<button class="btn" data-act="view" data-v="muro">Entrar al barrio</button>' : ''}</article>`;
 }
 
+function admin() {
+  if (!S.admin) return vacio('Solo para administradores', '');
+  const rm = countBy(S.reps), rep = S.posts.filter(p => rm[p.id]).sort((a, b) => rm[b.id] - rm[a.id]);
+  const shop = id => S.shops.find(c => c.id === id) || {};
+  const vecinos = Object.values(S.perf).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+  const npub = uid => S.posts.filter(p => p.autor === uid).length;
+  return `<div class="sec-h"><h2>Administración</h2><p>Lo que necesita tu mirada. Solo lo ven los administradores.</p></div>
+  <h3 class="adm-h">Pedidos de comercios <span>${S.recl.length}</span></h3>
+  <div class="feed">${S.recl.map(r => `<div class="card"><b>${esc(nombre(r.autor))}</b> pide administrar <b>${esc(shop(r.comercio_id).nombre || 'un comercio')}</b>
+    <div class="num">${hace(r.creado)}${r.mensaje ? ' · “' + esc(r.mensaje) + '”' : ''}</div>
+    <div class="acts"><button class="btn" data-act="aprobar" data-v="${esc(r.id)}">Aprobar</button><button class="btn alt" data-act="rechazar" data-v="${esc(r.id)}">Rechazar</button></div></div>`).join('') || '<p class="num" style="padding:0 4px">No hay pedidos pendientes.</p>'}</div>
+  <h3 class="adm-h">Publicaciones reportadas <span>${rep.length}</span></h3>
+  <div class="feed">${rep.map(p => postCard(p) + `<button class="btn alt" style="margin-top:-6px" data-act="descartar" data-v="${esc(p.id)}">Está bien: descartar reportes</button>`).join('') || '<p class="num" style="padding:0 4px">Nadie reportó nada. ¡Buen barrio!</p>'}</div>
+  <h3 class="adm-h">Vecinos registrados <span>${vecinos.length}</span></h3>
+  <div class="card" style="margin:0 12px 12px"><ul class="vec">${vecinos.map(v => `<li><b>${esc(v.nombre)}</b><span>${esc(v.barrio || 'sin barrio')} · ${npub(v.id)} publ.</span></li>`).join('')}</ul></div>`;
+}
+const pendientesAdmin = () => S.recl.length + new Set(S.reps.map(r => r.post_id)).size;
+
 function perfil() {
   const p = myP(), nm = p.nombre || 'Vos', mis = S.posts.filter(x => x.autor === S.me).sort((a, b) => t(b.creado) - t(a.creado));
   return `<div class="prof"><div class="av" style="background:hsl(${hue(S.me || 'x')} 62% 48%)">${esc(ini(nm))}</div><h2>${esc(nm)}</h2>
@@ -155,6 +187,7 @@ function perfil() {
   <label for="pb" style="display:block;margin-top:10px"><b>Mi barrio</b></label><select id="pb" name="barrio">${zonaOpts(p.barrio, 'Elegí…')}</select>
   <label for="pm" style="display:block;margin-top:10px"><b>¿Cómo tomás el mate?</b></label><select id="pm" name="mate"><option value="">—</option>${MATES.map(m => `<option${m === p.mate ? ' selected' : ''}>${m}</option>`).join('')}</select>
   <div style="margin-top:12px"><button class="btn">Guardar</button></div></form>
+  ${S.admin ? `<div style="padding:12px 12px 0"><button class="btn" data-act="view" data-v="admin" style="width:100%">Panel de administración${pendientesAdmin() ? ' · ' + pendientesAdmin() + ' pendiente' + (pendientesAdmin() > 1 ? 's' : '') : ''}</button></div>` : ''}
   <div style="padding:10px 14px"><button class="linkbtn" data-act="salir">Cerrar sesión</button></div>
   <div class="feed">${mis.map(x => postCard(x)).join('')}</div>`;
 }
@@ -182,12 +215,12 @@ function render() {
   const main = $('#main'), y = scrollY, f = document.activeElement;
   const keep = f && f.form && f.form.dataset.form === 'com' ? { v: f.form.dataset.v, t: f.value } : null;
   document.body.classList.toggle('sin-sesion', !S.me);
-  document.querySelectorAll('nav.bottom [data-act=view]').forEach(b => b.setAttribute('aria-current', String(b.dataset.v === S.view)));
+  document.querySelectorAll('nav.bottom [data-act=view]').forEach(b => b.setAttribute('aria-current', String(b.dataset.v === S.view || (S.view === 'admin' && b.dataset.v === 'perfil'))));
   document.querySelectorAll('#seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === S.tab)));
   $('#seg').style.display = S.me && S.view === 'muro' ? '' : 'none';
   $('#frase').style.display = S.me && S.view === 'muro' ? '' : 'none';
   if (!S.me) { main.innerHTML = S.view === 'idea' ? idea() : auth(); return; }
-  main.innerHTML = S.view === 'muro' ? muro() : S.view === 'vidriera' ? vidriera() : S.view === 'idea' ? idea() : perfil();
+  main.innerHTML = S.view === 'muro' ? muro() : S.view === 'vidriera' ? vidriera() : S.view === 'idea' ? idea() : S.view === 'admin' ? admin() : perfil();
   if (keep) { const inp = main.querySelector(`form[data-form=com][data-v="${CSS.escape(keep.v)}"] input`); if (inp) { inp.value = keep.t; inp.focus(); } }
   scrollTo(0, y);
 }
@@ -210,7 +243,9 @@ async function cargar() {
         q(sb.from('reportes').select('post_id,autor')),
         q(sb.rpc('es_admin'))
       ]);
-      Object.assign(S, { posts, coms, ceb, pas, seg, shops, reps, admin: !!adm, perf: Object.fromEntries(perf.map(p => [p.id, p])) });
+      let recl = [];
+      try { recl = await q(sb.from('reclamos').select('*').order('creado', { ascending: true })); } catch (e) { /* falta la actualización 002 */ }
+      Object.assign(S, { posts, coms, ceb, pas, seg, shops, reps, recl, admin: !!adm, perf: Object.fromEntries(perf.map(p => [p.id, p])) });
       if ($('#msg').textContent.includes('conectar')) msg('');
     } catch (e) { console.error(e); msg('No pudimos conectar con el barrio. Revisá tu conexión.'); }
     render();
@@ -232,6 +267,11 @@ async function subirFoto(input) {
   const blob = await comprimir(f); const path = `${S.me}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
   await q(S.sb.storage.from('fotos').upload(path, blob, { contentType: 'image/jpeg' }));
   return path;
+}
+async function subirGaleria(input) {
+  const fs = input && input.files ? [...input.files].slice(0, 4) : []; const out = [];
+  for (const f of fs) { const blob = await comprimir(f); const path = `${S.me}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`; await q(S.sb.storage.from('fotos').upload(path, blob, { contentType: 'image/jpeg' })); out.push(path); }
+  return out;
 }
 const borrarFoto = p => { if (p) S.sb.storage.from('fotos').remove([p]).catch(() => {}); };
 
@@ -259,7 +299,12 @@ function formShop(c) {
   <label for="sh">Horario</label><input id="sh" name="horario" maxlength="80" value="${esc(c.horario)}">
   <label for="se">Entrega</label><select id="se" name="entrega">${['', 'Retiro en el local', 'Cadete propio', 'Coordinar por WhatsApp'].map(o => `<option${o === (c.entrega || '') ? ' selected' : ''}>${o}</option>`).join('')}</select>
   <label for="sw">WhatsApp</label><input id="sw" name="wa" inputmode="tel" maxlength="30" value="${esc(c.whatsapp)}">
-  <label for="sp">Foto del frente o de quien atiende</label><input id="sp" type="file" name="foto" accept="image/*">
+  <label for="sp">Foto principal (el frente o quien atiende)</label><input id="sp" type="file" name="foto" accept="image/*">
+  <label for="sg">Galería: hasta 4 fotos más</label><input id="sg" type="file" name="galeria" accept="image/*" multiple>
+  <div class="hint">${(c.fotos || []).length ? 'Ya tiene ' + c.fotos.length + ' foto(s). Si elegís nuevas, reemplazan a las anteriores.' : 'Mostrá los productos, el local, la gente.'}</div>
+  <label for="sv">Video (opcional)</label><input id="sv" name="video" type="url" inputmode="url" maxlength="300" placeholder="Enlace de YouTube, Instagram o TikTok" value="${esc(c.video)}">
+  <div class="hint">Los de YouTube se ven dentro de la ficha; los demás abren en su app.</div>
+  ${S.admin ? `<label for="sc">Crédito de la presentación (solo admin)</label><input id="sc" name="credito" maxlength="80" list="creditos" placeholder="Ej.: La Pari Producciones" value="${esc(c.credito)}"><datalist id="creditos"><option value="La Pari Producciones"></datalist>` : ''}
   <div class="row" style="margin-top:16px"><button class="btn" type="submit">Guardar</button><button class="btn alt" type="button" data-act="cerrar">Cancelar</button></div></form>`);
 }
 
@@ -286,6 +331,13 @@ document.addEventListener('click', async e => {
   if (a === 'nuevo') { if (!myP().barrio) msg('Tip: elegí tu barrio en “Mi perfil” para que se cargue solo.', true); formPost(); return; }
   if (a === 'nuevoShop') { formShop(); return; }
   if (a === 'editShop') { formShop(S.shops.find(c => c.id === v)); return; }
+  if (a === 'reclamar') {
+    const c = S.shops.find(x => x.id === v) || {};
+    abrir(`<h2>¿Es tu comercio?</h2><p>Pedí administrar la ficha de <b>${esc(c.nombre)}</b>. Cuando el administrador lo apruebe, vas a poder cargar el WhatsApp, el horario, las fotos y el video.</p>
+    <form data-form="reclamo" data-v="${esc(v)}"><label for="rm">Un mensaje para el administrador (opcional)</label><textarea id="rm" name="mensaje" rows="3" maxlength="300" placeholder="Por ejemplo: soy el dueño y atiendo de mañana"></textarea>
+    <div class="row" style="margin-top:16px"><button class="btn" type="submit">Enviar pedido</button><button class="btn alt" type="button" data-act="cerrar">Cancelar</button></div></form>`);
+    return;
+  }
   try {
     if (a === 'cebar' || a === 'pasar') {
       const tabla = a === 'cebar' ? 'cebadas' : 'pasadas', arr = a === 'cebar' ? S.ceb : S.pas;
@@ -305,6 +357,9 @@ document.addEventListener('click', async e => {
       if (!confirmar(b, '¿Reportar? Tocá de nuevo')) return;
       await q(sb.from('reportes').insert({ post_id: v, autor: S.me })); msg('Gracias. Lo va a revisar quien administra el barrio.', true);
     }
+    if (a === 'aprobar') { await q(sb.rpc('aprobar_reclamo', { p_id: v })); msg('Listo: el comercio ya tiene dueño y lo puede editar.', true); }
+    if (a === 'rechazar') { if (!confirmar(b, '¿Rechazar?')) return; await q(sb.from('reclamos').delete().eq('id', v)); }
+    if (a === 'descartar') { await q(sb.from('reportes').delete().eq('post_id', v)); }
     if (a === 'salir') { await sb.auth.signOut(); return; }
     await cargar();
   } catch (err) { fail(err); }
@@ -330,6 +385,7 @@ document.addEventListener('submit', async e => {
       if (!r.data.session) authMsg('<div class="ok">¡Listo! Te mandamos un correo para confirmar la cuenta. Después volvé y tocá “Entrar”.</div>');
     }
     if (k === 'nuevaClave') { await q(sb.auth.updateUser({ password: String(fd.get('clave')) })); S.recovery = false; msg('Contraseña cambiada.', true); const r = await sb.auth.getSession(); await conSesion(r.data.session); }
+    if (k === 'reclamo') { await q(sb.from('reclamos').insert({ comercio_id: f.dataset.v, autor: S.me, mensaje: txt('mensaje') })); cerrar(); msg('Pedido enviado. Te avisamos cuando lo aprueben.', true); await cargar(); }
     if (k === 'com') { const tt = txt('t'); if (tt) { await q(sb.from('comentarios').insert({ post_id: f.dataset.v, autor: S.me, texto: tt })); f.reset(); await cargar(); } }
     if (k === 'perfil') { await q(sb.from('perfiles').update({ nombre: txt('nombre') || 'Vecino', barrio: txt('barrio'), mate: txt('mate') }).eq('id', S.me)); msg('Perfil guardado.', true); await cargar(); }
     if (k === 'post') {
@@ -340,10 +396,13 @@ document.addEventListener('submit', async e => {
     if (k === 'shop') {
       const id = f.dataset.v, old = S.shops.find(c => c.id === id) || {};
       const foto = await subirFoto(f.querySelector('[name=foto]'));
-      const data = { nombre: txt('nombre'), rubro: txt('rubro'), barrio: txt('barrio'), referencia: txt('referencia'), atiende: txt('atiende'), horario: txt('horario'), entrega: txt('entrega'), whatsapp: txt('wa'), foto: foto || old.foto || '', pendiente: false };
+      const gal = await subirGaleria(f.querySelector('[name=galeria]'));
+      const vid = txt('video');
+      const data = { video: /^https:\/\//.test(vid) ? vid : '', ...(gal.length ? { fotos: gal } : {}), ...(S.admin ? { credito: txt('credito') } : {}), nombre: txt('nombre'), rubro: txt('rubro'), barrio: txt('barrio'), referencia: txt('referencia'), atiende: txt('atiende'), horario: txt('horario'), entrega: txt('entrega'), whatsapp: txt('wa'), foto: foto || old.foto || '', pendiente: false };
       if (id) await q(sb.from('comercios').update(data).eq('id', id));
       else await q(sb.from('comercios').insert({ ...data, autor: S.me }));
       if (foto && old.foto) borrarFoto(old.foto);
+      if (gal.length) (old.fotos || []).forEach(borrarFoto);
       cerrar(); await cargar();
     }
   } catch (err) {
@@ -370,7 +429,7 @@ async function conSesion(session) {
   if (nuevo === S.me && (nuevo === null || S.posts.length)) { render(); return; }
   S.me = nuevo;
   if (canal) { S.sb.removeChannel(canal); canal = null; }
-  if (!S.me) { Object.assign(S, { posts: [], coms: [], ceb: [], pas: [], seg: [], reps: [], perf: {}, shops: [], admin: false, view: S.view === 'idea' ? 'idea' : 'muro' }); render(); return; }
+  if (!S.me) { Object.assign(S, { posts: [], coms: [], ceb: [], pas: [], seg: [], reps: [], recl: [], perf: {}, shops: [], admin: false, view: S.view === 'idea' ? 'idea' : 'muro' }); render(); return; }
   if (S.view !== 'idea') S.view = 'muro';
   render(); await cargar();
   canal = S.sb.channel('barrio').on('postgres_changes', { event: '*', schema: 'public' }, recargar).subscribe();

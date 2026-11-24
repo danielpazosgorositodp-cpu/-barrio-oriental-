@@ -10,7 +10,7 @@ Lleva unos 20 minutos y no cuesta nada: los planes gratis de Supabase, GitHub y 
 |---|---|
 | `index.html`, `styles.css`, `app.js` | La app |
 | `config.js` | Los datos de conexión a la base (paso 2) |
-| `manifest.webmanifest`, `sw.js`, `img/` | Lo que la hace instalable con su ícono |
+| `manifest.webmanifest`, `sw.js` y las imágenes `.png` | Lo que la hace instalable con su ícono |
 | `supabase/schema.sql` | La base de datos con sus reglas de seguridad (paso 1) |
 
 ---
@@ -45,7 +45,7 @@ Pasámelas por el chat y yo las pongo en `config.js`. Si lo hacés vos, abrí `c
    - Nombre: `barrio-oriental`
    - Puede ser **Private**.
    - Tocá **Create repository**.
-3. En la página del repositorio tocá **uploading an existing file**, arrastrá **todo el contenido** de la carpeta (los archivos y las carpetas `img` y `supabase`) y tocá **Commit changes**.
+3. En la página del repositorio tocá **uploading an existing file**, arrastrá **todos los archivos** de la carpeta (la carpeta `supabase` no hace falta) y tocá **Commit changes**.
 
 **Para que yo pueda hacer los cambios después:** en claude.ai andá a **Configuración → Conectores** y conectá **GitHub**. Cuando le des acceso al repositorio `barrio-oriental`, cada cambio que me pidas lo subo yo directamente.
 

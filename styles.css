@@ -136,3 +136,15 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .install p{margin:0;flex:1;font-size:15px}
 body.sin-sesion nav.bottom,body.sin-sesion #seg,body.sin-sesion #frase{display:none}
 @media(max-width:380px){.brand{gap:10px}.logocard{padding:6px 9px;border-radius:14px}.seg button{font-size:16px}nav.bottom button{font-size:11.5px}.act{padding:8px 10px}.frase p{font-size:15px}.frase p b{font-size:18px}}
+.video{position:relative;aspect-ratio:16/9;margin-top:12px;border-radius:14px;overflow:hidden;background:#000}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.lnk.vid{margin-top:12px}
+.gal{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin-top:12px;padding-bottom:4px}
+.gal img{flex:none;width:78%;max-width:320px;aspect-ratio:4/3;object-fit:cover;border-radius:12px;scroll-snap-align:start;background:var(--soft)}
+.credito{margin:10px 0 0;font-size:14px;color:var(--mut)}
+.credito b{color:var(--ink)}
+.adm-h{font:800 20px/1.2 "Baloo 2",sans-serif;margin:18px 16px 0;display:flex;gap:8px;align-items:center}
+.adm-h span{font:800 13px Nunito,sans-serif;background:var(--sol);color:#3a2a00;border-radius:99px;padding:1px 9px}
+.vec{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.vec li{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.vec li span{color:var(--mut);font-size:14px;text-align:right}
