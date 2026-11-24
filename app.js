@@ -88,8 +88,8 @@ function postCard(p, por) {
   ${okUrl(foto) ? `<img class="foto" loading="lazy" alt="Foto de la publicación" src="${esc(foto)}">` : ''}
   ${wa ? `<div style="margin-top:10px"><a class="wa" href="${esc(wa)}" target="_blank" rel="noopener"><svg width="20" height="20"><use href="#i-tel"/></svg>Hablar por WhatsApp</a><div class="num">${esc(p.whatsapp)}</div></div>` : ''}
   <div class="acts">
-   <button class="act ${mine(S.ceb, p.id) ? 'on' : ''}" data-act="cebar" data-v="${esc(p.id)}" aria-label="Cebar un mate"><svg><use href="#i-mate"/></svg>${cm[p.id] || 0} ${mine(S.ceb, p.id) ? 'Cebado' : 'Cebar'}</button>
-   <button class="act ${mine(S.pas, p.id) ? 'on' : ''}" data-act="pasar" data-v="${esc(p.id)}"><svg><use href="#i-pasar"/></svg>${pm[p.id] || 0} Pasar el mate</button>
+   <button class="act ${mine(S.ceb, p.id) ? 'on' : ''}" data-act="cebar" data-v="${esc(p.id)}" title="Cebar un mate es como dar me gusta"><svg><use href="#i-mate"/></svg><span class="lbl">${cm[p.id] || 0} ${mine(S.ceb, p.id) ? 'Cebado' : 'Cebar'}<small>(me gusta)</small></span></button>
+   <button class="act ${mine(S.pas, p.id) ? 'on' : ''}" data-act="pasar" data-v="${esc(p.id)}" title="Pasar el mate es compartirlo con los que te siguen"><svg><use href="#i-pasar"/></svg><span class="lbl">${pm[p.id] || 0} ${mine(S.pas, p.id) ? 'Pasado' : 'Pasar el mate'}<small>(compartir)</small></span></button>
    <button class="act" data-act="coms" data-v="${esc(p.id)}" aria-label="Comentarios"><svg><use href="#i-com"/></svg>${coms.length}</button>
    ${(yo || S.admin) ? `<button class="del" data-act="borrar" data-v="${esc(p.id)}">Borrar</button>` : (!p.ejemplo ? `<button class="del" data-act="reportar" data-v="${esc(p.id)}">${yaRep ? 'Reportado' : 'Reportar'}</button>` : '')}
   </div>
@@ -375,13 +375,26 @@ document.addEventListener('click', async e => {
   }
   try {
     if (a === 'cebar' || a === 'pasar') {
-      const tabla = a === 'cebar' ? 'cebadas' : 'pasadas', arr = a === 'cebar' ? S.ceb : S.pas;
-      if (mine(arr, v)) { await q(sb.from(tabla).delete().eq('post_id', v).eq('autor', S.me)); }
-      else { await q(sb.from(tabla).insert({ post_id: v, autor: S.me })); }
+      // Se marca al instante y se guarda por detrás; si falla, se deshace.
+      const tabla = a === 'cebar' ? 'cebadas' : 'pasadas', key = a === 'cebar' ? 'ceb' : 'pas', prev = S[key], ya = mine(prev, v);
+      S[key] = ya ? prev.filter(x => !(x.post_id === v && x.autor === S.me)) : [...prev, { post_id: v, autor: S.me, creado: new Date().toISOString() }];
+      render();
+      if (a === 'pasar' && !ya) msg('Pasaste el mate: ahora le aparece a los que te siguen, en su pestaña Amigos.', true);
+      try {
+        if (ya) await q(sb.from(tabla).delete().eq('post_id', v).eq('autor', S.me));
+        else await q(sb.from(tabla).insert({ post_id: v, autor: S.me }));
+      } catch (err) { S[key] = prev; render(); throw err; }
+      return;
     }
     if (a === 'seguir') {
-      if (sigo(v)) await q(sb.from('seguimientos').delete().eq('seguidor', S.me).eq('seguido', v));
-      else await q(sb.from('seguimientos').insert({ seguidor: S.me, seguido: v }));
+      const prev = S.seg, ya = sigo(v);
+      S.seg = ya ? prev.filter(x => !(x.seguidor === S.me && x.seguido === v)) : [...prev, { seguidor: S.me, seguido: v }];
+      render();
+      try {
+        if (ya) await q(sb.from('seguimientos').delete().eq('seguidor', S.me).eq('seguido', v));
+        else await q(sb.from('seguimientos').insert({ seguidor: S.me, seguido: v }));
+      } catch (err) { S.seg = prev; render(); throw err; }
+      return;
     }
     if (a === 'borrar') { if (!confirmar(b)) return; const p = S.posts.find(x => x.id === v); await q(sb.from('posts').delete().eq('id', v)); if (p) borrarFoto(p.foto); }
     if (a === 'borrarCom') { if (!confirmar(b, '¿Borrar?')) return; await q(sb.from('comentarios').delete().eq('id', v)); }
@@ -430,7 +443,7 @@ document.addEventListener('submit', async e => {
     }
     if (k === 'nuevaClave') { await q(sb.auth.updateUser({ password: String(fd.get('clave')) })); S.recovery = false; msg('Contraseña cambiada.', true); const r = await sb.auth.getSession(); await conSesion(r.data.session); }
     if (k === 'reclamo') { await q(sb.from('reclamos').insert({ comercio_id: f.dataset.v, autor: S.me, mensaje: txt('mensaje') })); cerrar(); msg('Pedido enviado. Te avisamos cuando lo aprueben.', true); await cargar(); }
-    if (k === 'com') { const tt = txt('t'); if (tt) { await q(sb.from('comentarios').insert({ post_id: f.dataset.v, autor: S.me, texto: tt })); f.reset(); await cargar(); } }
+    if (k === 'com') { const tt = txt('t'); if (tt) { const nuevo = await q(sb.from('comentarios').insert({ post_id: f.dataset.v, autor: S.me, texto: tt }).select().single()); S.coms = [...S.coms, nuevo]; f.reset(); render(); } }
     if (k === 'perfil') { await q(sb.from('perfiles').update({ nombre: txt('nombre') || 'Vecino', barrio: txt('barrio'), mate: txt('mate') }).eq('id', S.me)); msg('Perfil guardado.', true); await cargar(); }
     if (k === 'post') {
       const foto = await subirFoto(f.querySelector('[name=foto]'));
