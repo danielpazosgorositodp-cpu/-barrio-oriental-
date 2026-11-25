@@ -191,7 +191,7 @@ header.top .seg{margin:10px 16px 0;padding:4px}
 header.top{padding:0 0 10px;background:#fff;color:var(--ink)}
 .banner{position:relative;background:#fff;padding:6px 8px 4px}
 .banner img{display:block;width:100%;height:auto;max-height:20vh;object-fit:contain}
-.banner .beta{position:absolute;bottom:6px;left:14px;font-size:11px;padding:1px 8px}
+.banner .beta{position:absolute;bottom:2px;right:10px;font-size:10.5px;padding:0 7px}
 header.top .seg{margin:6px 12px 0;background:var(--soft)}
 header.top .seg button{color:var(--celd)}
 header.top .seg button[aria-pressed=true]{background:var(--azul);color:#fff}
