@@ -189,9 +189,9 @@ header.top .seg{margin:10px 16px 0;padding:4px}
 
 /* ---------- Banner superior: una sola imagen ancha (Barrio · sol · riental sobre las franjas) ---------- */
 header.top{padding:0 0 10px;background:#fff;color:var(--ink)}
-.banner{position:relative;background:#fff;padding:6px 8px 4px}
+.banner{position:relative;background:#fff;padding:0}
 .banner img{display:block;width:100%;height:auto;max-height:20vh;object-fit:contain}
-.banner .beta{position:absolute;bottom:2px;right:10px;font-size:10.5px;padding:0 7px}
+.banner .beta{position:absolute;top:6px;right:10px;font-size:10.5px;padding:0 7px}
 header.top .seg{margin:6px 12px 0;background:var(--soft)}
 header.top .seg button{color:var(--celd)}
 header.top .seg button[aria-pressed=true]{background:var(--azul);color:#fff}
