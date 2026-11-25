@@ -175,8 +175,8 @@ header.top{padding:0 0 14px;background:var(--azul);color:#fff}
 header.top .stripes,header.top .brand{display:none}
 .barrio-row{background:#fff;padding:calc(22 * var(--u)) 0 0 calc(34 * var(--u))}
 .barrio-row img{display:block;height:calc(182 * var(--u));width:auto}
-.bandera{position:relative;height:calc(526 * var(--u));overflow:hidden;background-color:#fff;
-  background-image:repeating-linear-gradient(to bottom,#fff 0 calc(36 * var(--u)),var(--azul) calc(36 * var(--u)) calc(72 * var(--u)));
+.bandera{position:relative;height:calc(526 * var(--u));overflow:hidden;background-color:#fff;margin-top:-1px;
+  background-image:repeating-linear-gradient(to bottom,transparent 0 calc(36 * var(--u)),var(--azul) calc(36 * var(--u)) calc(72 * var(--u)));
   background-position:0 calc(202 * var(--u));background-size:100% calc(324 * var(--u));background-repeat:no-repeat}
 .canton{position:absolute;left:0;top:0;width:calc(382 * var(--u));height:calc(382 * var(--u));background:#fff;display:grid;place-items:center}
 .canton img{width:90%;height:auto;display:block}
