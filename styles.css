@@ -167,19 +167,22 @@ body.sin-sesion nav.bottom,body.sin-sesion #seg,body.sin-sesion #frase{display:n
 .act .lbl small{font-size:11.5px;font-weight:600;opacity:.75}
 .video.vert{aspect-ratio:auto;width:min(100%,340px);height:600px;margin-inline:auto;background:var(--soft)}
 #fv{flex:1}
-/* ---------- Encabezado bandera: 9 franjas, sol en el cantón, "riental" sobre la primera franja azul ---------- */
-:root{--azul:#0038a8;--s:clamp(14px,4.4vw,20px);--t:calc(var(--s) * 2)}
-header.top{padding:0;background:var(--azul);color:#fff}
-header.top .stripes{display:none}
-.bandera{position:relative;height:calc(var(--t) + 9 * var(--s));overflow:hidden;background-color:#fff;
-  background:linear-gradient(#fff,#fff) 0 0 / 100% var(--t) no-repeat,
-             repeating-linear-gradient(to bottom,#fff 0 var(--s),var(--azul) var(--s) calc(2 * var(--s))) 0 var(--t) / 100% calc(9 * var(--s)) no-repeat}
-.canton{position:absolute;left:0;top:0;width:calc(var(--t) + 5 * var(--s));height:calc(var(--t) + 5 * var(--s));background:#fff;display:grid;place-items:center}
-.canton img{width:88%;height:auto;display:block}
-.marca{position:absolute;top:0;left:calc(var(--t) + 5 * var(--s) + 2px);height:calc(3 * var(--s));width:calc(10 * var(--s));overflow:visible;fill:var(--azul);font-family:"Baloo 2",sans-serif}
-.bandera .beta{position:absolute;right:12px;bottom:calc(var(--s) * 0.5);box-shadow:0 2px 6px rgba(0,0,0,.2)}
+/* ---------- Encabezado: "Barrio" con la B-mapa arriba; "Oriental" forma la bandera ----------
+   Medidas en unidades del logotipo original (u): franja 36u, zona blanca superior 202u,
+   cantón 382u (zona blanca + 5 franjas), "riental" 529x136u con su base sobre la primera franja azul. */
+:root{--azul:#0038a8;--u:calc(min(100vw, 600px) / 971)}
+header.top{padding:0 0 14px;background:var(--azul);color:#fff}
+header.top .stripes,header.top .brand{display:none}
+.barrio-row{background:#fff;padding:calc(22 * var(--u)) 0 0 calc(34 * var(--u))}
+.barrio-row img{display:block;height:calc(182 * var(--u));width:auto}
+.bandera{position:relative;height:calc(526 * var(--u));overflow:hidden;background-color:#fff;
+  background-image:repeating-linear-gradient(to bottom,#fff 0 calc(36 * var(--u)),var(--azul) calc(36 * var(--u)) calc(72 * var(--u)));
+  background-position:0 calc(202 * var(--u));background-size:100% calc(324 * var(--u));background-repeat:no-repeat}
+.canton{position:absolute;left:0;top:0;width:calc(382 * var(--u));height:calc(382 * var(--u));background:#fff;display:grid;place-items:center}
+.canton img{width:90%;height:auto;display:block}
+.bandera .riental{position:absolute;left:calc(396 * var(--u));top:calc(102 * var(--u));width:calc(529 * var(--u));height:auto;display:block}
+.bandera .beta{position:absolute;right:12px;bottom:calc(10 * var(--u));box-shadow:0 2px 6px rgba(0,0,0,.2)}
 .lemaband{padding:10px 16px 2px}
 .lemaband p{margin:0;font:700 clamp(15px,4.2vw,18px)/1.25 "Baloo 2",sans-serif;color:#fff}
 header.top .seg{margin:10px 16px 0;padding:4px}
-header.top{padding-bottom:14px}
 .seg button[aria-pressed=true]{color:var(--azul)}
